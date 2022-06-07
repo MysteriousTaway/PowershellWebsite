@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://pizzachips.xyz/assets/css/error.css">
+  <title>{{ .title }}</title>
+</head>
+<body>
+<div id="particles-js"></div>
+
+<div class="page">
+  <div class="page-content">
+    <div class="container">
+      <div class='code'>{{ .code }}</div>
+      <h1>{{ .message }}</h1>
+      <p>{{ .desc }}</p>
+      <a class="button" href="javascript:history.back()">Go back</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://pizzachips.xyz/assets/particles/particles.js"></script>
+<script src="https://pizzachips.xyz/assets/particles/js/app.js"></script>
+</body>
+</html>

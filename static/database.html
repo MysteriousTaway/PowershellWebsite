@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!--  -->
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <!-- STUFF -->
+        <title>Database</title>
+    </head>
+    <header>
+        <h1>graphik design is my pashn</h1>
+    </header>
+    <!-- CODE -->
+    <body>
+        <div class="form">
+            <!-- SEARCH -->
+            <form action="/database/remove" method="post">
+                <button class="btn btn-primary" type="submit">Remove</button>
+                <input class="searchBar" type="search" name="ID" placeholder="ID">
+            </form>
+        </div>
+    </body>
+    <body>
+        <div class="form">
+            <!-- INSERT -->
+            <form action="/database/insert" method="post">
+                <button type="submit" class="btn btn-success">Insert</button>
+<!--                <input type="hidden" name="action" value="insert">-->
+                <input type="text" name="ID_AUTO" placeholder="ID_AUTO">
+                <input type="text" name="Znacka" placeholder="Znacka">
+                <input type="text" name="Model" placeholder="Model">
+                <input type="text" name="Spotreba" placeholder="Spotreba">
+                <input type="text" name="Barva" placeholder="Barva">
+                <input type="text" name="ID_MOTOR" placeholder="ID_MOTOR">
+                <input type="text" name="ID_PREVODOVKA" placeholder="ID_PREVODOVKA">
+                <input type="text" name="ID_KOLA" placeholder="ID_KOLA">
+            </form>
+        </div>
+    </body>
+</html>

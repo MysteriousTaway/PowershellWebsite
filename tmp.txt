@@ -1,0 +1,49 @@
+
+    # ROUTE EXAMPLE 2
+    # http://127.0.0.1/some/form'
+    if ($context.Request.HttpMethod -eq 'GET' -and $context.Request.RawUrl -eq '/some/form') {
+
+        # We can log the request to the terminal
+        write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
+
+        [string]$html = "
+        <h1>A Powershell Webserver</h1>
+        <form action='/some/post' method='post'>
+            <p>A Basic Form</p>
+            <p>fullname</p>
+            <input type='text' name='fullname'>
+            <p>message</p>
+            <textarea rows='4' cols='50' name='message'></textarea>
+            <br>
+            <input type='submit' value='Submit'>
+        </form>
+        "
+
+        #resposed to the request
+        $buffer = [System.Text.Encoding]::UTF8.GetBytes($html) 
+        $context.Response.ContentLength64 = $buffer.Length
+        $context.Response.OutputStream.Write($buffer, 0, $buffer.Length) 
+        $context.Response.OutputStream.Close()
+    }
+
+    # ROUTE EXAMPLE 3
+    # http://127.0.0.1/some/post'
+    if ($context.Request.HttpMethod -eq 'POST' -and $context.Request.RawUrl -eq '/some/post') {
+
+        # decode the form post
+        # html form members need 'name' attributes as in the example!
+        $FormContent = [System.IO.StreamReader]::new($context.Request.InputStream).ReadToEnd()
+
+        # We can log the request to the terminal
+        write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
+        Write-Host $FormContent -f 'Green'
+
+        # the html/data
+        [string]$html = "<h1>A Powershell Webserver</h1><p>Post Successful!</p>" 
+
+        #resposed to the request
+        $buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+        $context.Response.ContentLength64 = $buffer.Length
+        $context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+        $context.Response.OutputStream.Close() 
+    }

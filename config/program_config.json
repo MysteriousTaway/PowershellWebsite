@@ -1,0 +1,16 @@
+{
+    "ip": "127.0.0.1",
+    "port": 8080,
+
+    "/": {
+       "css": "static/css/login.css",
+       "icon": "static/image/icon.ico",
+       "html": "static/login.html"
+    },
+
+    "/database": {
+        "css": "static/css/style.css",
+        "icon": "static/image/icon.ico",
+        "html": "static/database.html"
+    }
+ }
