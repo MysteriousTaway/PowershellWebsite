@@ -114,27 +114,36 @@ function SendHTML() {
     $context.Response.OutputStream.Write($buffer, 0, $buffer.Length) #stream to broswer
     $context.Response.OutputStream.Close() # close the response
 }
+
 function RunSQLQuery {
-    try {
-        param($Query)
-        Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-        Invoke-SqlQuery -query "$Query"
-        Close-SqlConnection
-    } catch {
-        {1:"RunSQLQuery error !"}
-    }
+    param($Query)
+    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+    Invoke-SqlQuery -query "$Query"
+    Close-SqlConnection
+    #try {
+    #    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+    #    Invoke-SqlQuery -query "$Query"
+    #    Close-SqlConnection
+    #} catch {
+    #    {1:"RunSQLQuery error !"}
+    #}
 }
 
 function GetDataFromSQLQuery {
-    try {
-        param($Query)
-        Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-        $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
-        Close-SqlConnection
-        return $data
-    } catch {
-        {1:"GetDataFromSQLQuery error !"}
-    }
+    param($Query)
+    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+    $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
+    Close-SqlConnection
+    return $data
+    #try {
+    #    param($Query)
+    #    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+    #    $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
+    #    Close-SqlConnection
+    #    return $data
+    #} catch {
+    #    {1:"GetDataFromSQLQuery error !"}
+    #}
 }
 
 RunSQLQuery -Query "Select * FROM `users` "
