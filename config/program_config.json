@@ -1,6 +1,14 @@
 {
-    "ip": "127.0.0.1",
+    "ip": "localhost",
     "port": 8080,
+
+    "database_credentials": {
+        "user": "toor",
+        "password": "toor",
+        "database": "database",
+        "server": "127.0.0.1",
+        "port": "3306"
+    },
 
     "/": {
        "css": "static/css/login.css",
