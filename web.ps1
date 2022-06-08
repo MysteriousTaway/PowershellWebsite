@@ -1,9 +1,37 @@
 # Please install dependencies
 # Install-Module -Name SimplySQL
-# Documentation: https://github.com/mithrandyr/SimplySql/blob/master/README.md
-Import-Module SimplySQL
-# https://docs.microsoft.com/en-us/powershell/module/sqlps/invoke-sqlcmd?view=sqlserver-ps
-Import-Module SQLPS
+# TODO: Require administrator rights to start!
+try {
+    # Documentation: https://github.com/mithrandyr/SimplySql/blob/master/README.md
+    Import-Module SimplySQL
+    # https://docs.microsoft.com/en-us/powershell/module/sqlps/invoke-sqlcmd?view=sqlserver-ps
+    Import-Module SQLPS
+} catch {
+    write-host "An error occured while trying to import modules! Attempting to fix it by downloading dependencies and checking version of PowerShell!"
+    # Check version:
+    $ver = Get-Host | Select-Object Version
+    write-host "Your PowerShell version: $ver"
+    if($ver -eq "@{Version=5.1.19041.1682}") {
+        write-host "You are running the same version of PowerShell on which this was developed!" -f "black" -b "green"
+    } else {
+        write-host "This webpage is built on 5.1.19041.1682 and most likely will not work on different versions!" -f "black" -b "red"
+    }
+    # Install dependencies
+    Install-Module SimplySQL
+    Install-Module SqlServer
+    # Update downloaded modules
+    Update-Module
+    # Update help menu:
+    Update-Help
+}
+
+
+# Install dependencies:
+Install-Module -Name SqlServer
+Install-Module -Name SimplySQL
+
+# Update help:
+Update-Help
 
 $run = "true"
 # Write PID of current process for killtask
@@ -91,7 +119,9 @@ function GetDataFromSQLQuery {
         {1:"GetDataFromSQLQuery error !"}
     }
 }
+
 RunSQLQuery -Query "Select * FROM `users` "
+
 # Log ready message to terminal 
 if ($run -eq "true") {
     write-host "HTTP Server started on "$ip":"$port"!" -f 'black' -b 'gre'
