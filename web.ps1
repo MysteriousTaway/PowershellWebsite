@@ -1,5 +1,3 @@
-# Script requirements:
-# Requires -RunAsAdministrator
 # Load config:
 $run = "true"
 # Write PID of current process for killtask
@@ -7,43 +5,56 @@ write-host "PID: " + $PID
 # Load config
 $configJson = Get-Content "config/program_config.json"
 # Convert to object
-$config = $configJson | ConvertFrom-Json
+$config = $configJson |ConvertFrom-Json
+$NumberOfModules = $config | Select-Object -ExpandProperty "NumberOfModules"
 
-function  LoadDependencies{
-        # Tries to import modules and if it throws error then it tries to install them
-    try {
-        # Documentation: https://github.com/mithrandyr/SimplySql/blob/master/README.md
-        Import-Module SimplySQL
-        write-host "> SimplySQL" -f "black" -b "green"
-        # https://docs.microsoft.com/en-us/powershell/module/sqlps/invoke-sqlcmd?view=sqlserver-ps
-        Import-Module SqlServer
-        write-host "> SqlServer" -f "black" -b "green"
-    } catch {
-        write-host "An error occured while trying to import modules! Attempting to fix it by downloading dependencies and checking version of PowerShell!" -f "black" -b "red"
+$installedDependencies = $false
+function InstallDependencies {
+    write-host "INSTALLING MODULES!" -f "black" -b "blue"
+    if ($installedDependencies -ne $true) {
         # Check version:
         $ver = Get-Host | Select-Object Version
-        write-host "Your PowerShell version: $ver"
-        if($ver -eq "@{Version=5.1.19041.1682}") {
+        if("@{Version=5.1.19041.1682}" -eq $ver) {
+            write-host "Your PowerShell version: $ver" -f "black" -b "green"
             write-host "You are running the same version of PowerShell on which this was developed!" -f "black" -b "green"
         } else {
+            write-host "Your PowerShell version: $ver" -f "black" -b "red"
             write-host "This webpage is built on 5.1.19041.1682 and most likely will not work on different versions!" -f "black" -b "red"
         }
         # Install dependencies:
         write-host "INSTALLING MODULES!" -f "black" -b "yellow"
-        Install-Module -Name SqlServer
-        Install-Module -Name SimplySQL
+        for ($i = 0; $i -lt $NumberOfModules; $i++) {
+            $string = "$i> " + $config.modules.$i
+            Install-Module $config.modules.$i
+            write-host $string -f "black" -b "green"
+        }
         # Update downloaded modules:
         write-host "UPDATING EXISTING MODULES!" -f "black" -b "yellow"
         Update-Module
         # Update help menu:
         write-host "UPADATING HELP MENU!" -f "black" -b "yellow"
         Update-Help
-        write-host "TRYING AGAIN TO LOAD DEPENDENCIES IF THIS LOOPS JUST RESTART THE SCRIPT!" -f "black" -b "red"
+        $installedDependencies = $true
         LoadDependencies
     }
 }
+function  LoadDependencies{
+    # Documentation: https://github.com/mithrandyr/SimplySql/blob/master/README.md
+    # https://docs.microsoft.com/en-us/powershell/module/sqlps/invoke-sqlcmd?view=sqlserver-ps
+    # Tries to import modules and if it throws error then it tries to install them
+    write-host "LOADING MODULES!" -f "black" -b "blue"
+    for ($i = 0; $i -lt $NumberOfModules; $i++) {
+        $string = "$i> " + $config.modules.$i
+        if (Get-Module -ListAvailable -Name $config.modules.$i) {
+            Import-Module $config.modules.$i
+            write-host $string -f "black" -b "green"
+        } else {
+            write-host "$string NOT FOUND!" -f "black" -b "red"
+            InstallDependencies
+        }
+    }
+}
 
-write-host "LOADING MODULES!" -f "black" -b "blue"
 LoadDependencies
 
 # Config server

@@ -1,2 +1,4 @@
-Powershell.exe -executionpolicy remotesigned -File  web.ps1
+setlocal
+cd /d %~dp0
+Powershell.exe -executionpolicy bypass -File web.ps1 -NoNewWindow
 ::pause

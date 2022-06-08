@@ -1,6 +1,12 @@
 {
     "ip": "localhost",
     "port": 8080,
+    
+    "NumberOfModules":2,
+    "modules": {
+        "0":"SimplySQL",
+        "1":"SqlServer"
+    },
 
     "database_credentials": {
         "user": "toor",
