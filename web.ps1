@@ -1,3 +1,4 @@
+# ───── ❝ STARTUP ❞ ─────
 # Load config:
 $run = "true"
 # Write PID of current process for killtask
@@ -8,6 +9,7 @@ $configJson = Get-Content "config/program_config.json"
 $config = $configJson |ConvertFrom-Json
 $NumberOfModules = $config | Select-Object -ExpandProperty "NumberOfModules"
 
+# ───── ❝ DEPENDENCIES / MODULES ❞ ─────
 $installedDependencies = $false
 function InstallDependencies {
     write-host "INSTALLING MODULES!" -f "black" -b "blue"
@@ -57,6 +59,7 @@ function  LoadDependencies{
 
 LoadDependencies
 
+# ───── ❝ WEB SERVER START ❞ ─────
 # Config server
 $ip = $config | Select-Object -ExpandProperty "ip"
 $port = $config | Select-Object -ExpandProperty "port"
@@ -74,6 +77,8 @@ $http.Prefixes.Add("http://" + $ip + ":" + $port + "/")
 # Start the Http Server 
 $http.Start()
 
+# ───── ❝ FUNCTIONS ❞ ─────
+# ───── ❝ WEBSITE - HTML - CSS❞ ─────
 # Functions must be declared BEFORE using them
 # Stupidly complicated serving of websites XD
 function GetCSS {
@@ -115,39 +120,63 @@ function SendHTML() {
     $context.Response.OutputStream.Close() # close the response
 }
 
+# ───── ❝ MYSQL DATABASE ❞ ─────
+# Open MySQL connection and ask user for a certificate:
+# FIXME do not ask user for a certificate when it IS in the json file!
+Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
 function RunSQLQuery {
     param($Query)
-    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-    Invoke-SqlQuery -query "$Query"
-    Close-SqlConnection
-    #try {
-    #    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-    #    Invoke-SqlQuery -query "$Query"
-    #    Close-SqlConnection
-    #} catch {
-    #    {1:"RunSQLQuery error !"}
-    #}
+    try {
+        #Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+        Invoke-SqlQuery -query "$Query"
+        #Close-SqlConnection
+    } catch {
+        write-host "[RunSQLQuery] ERROR! Query: [$Query]" -f "black" -b "red"
+    }
 }
 
 function GetDataFromSQLQuery {
     param($Query)
-    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-    $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
-    Close-SqlConnection
-    return $data
-    #try {
-    #    param($Query)
-    #    Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-    #    $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
-    #    Close-SqlConnection
-    #    return $data
-    #} catch {
-    #    {1:"GetDataFromSQLQuery error !"}
-    #}
+    try {
+        #Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
+        $data = Invoke-SqlQuery -query $Query -Parameters @{var = 'a value'}
+        #Close-SqlConnection
+        return $data
+    } catch {
+        write-host "[GetDataFromQuery] ERROR! Query: [$Query]" -f "black" -b "red"
+    }
+}
+# ───── ❝ DATABASE INTERACTIONS ❞ ─────
+function AttemptLogin {
+    param($FormContent)
+    
+    # Get username from form:
+    $Regex = [Regex]::new("(?<=username=)(.*)(?=&password)")           
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $username = $Match.Value           
+    }
+    
+    # Get password from form:
+    $Regex = [Regex]::new("(?<=&password=)(.*)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $password = $Match.Value           
+    }
+
+    # Check if password is correct:
+    $passwordFromDatabase = GetDataFromSQLQuery -Query "SELECT PASSWORD FROM `users` WHERE USERNAME = '$username';"
+    #write-host "User: $username Password: $password PasswordFromDB: " $passwordFromDatabase.Item("PASSWORD") "FormContent: $FormContent"
+    if($password -eq $passwordFromDatabase.Item("PASSWORD")) {
+        write-host "User $username logged in!" -f "black" -b "green"
+        return $true
+    } else {
+        write-host "Unsuccessful login attempt for user $username!" -f "black" -b "red"
+        return $false
+    }
 }
 
-RunSQLQuery -Query "Select * FROM `users` "
-
+# ───── ❝ HANDLE WEB REQUESTS ❞ ─────
 # Log ready message to terminal 
 if ($run -eq "true") {
     write-host "HTTP Server started on "$ip":"$port"!" -f 'black' -b 'gre'
@@ -174,8 +203,10 @@ while ($run -eq "true") {
 
         # We can log the request to the terminal
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
-        Write-Host $FormContent -f 'Green'
-        SendHTML -RawUrl $context.Request.RawUrl -context $context
+        #Write-Host $FormContent -f 'yellow'
+        if(AttemptLogin -FormContent $FormContent) {
+            SendHTML -RawUrl $context.Request.RawUrl -context $context
+        }
     }
 
     # Kill server remotely :)
@@ -187,5 +218,8 @@ while ($run -eq "true") {
     }
 } 
 
-# Kill self
+# ───── ❝ EOF ❞ ─────
+# Close SQL connection:
+Close-SqlConnection
+# Kill self:
 Stop-Process $PID

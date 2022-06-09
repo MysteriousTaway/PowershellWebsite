@@ -1,3 +1,16 @@
+#REGEX:
+#get username:
+#	(?<=username=)(.*)(?=&password)
+#
+#get password:
+#	(?<=&password=)(.*)
+
+# Get data from query:
+$table = GetDataFromSQLQuery -Query "Select * FROM `users` "
+# parse data from query:
+foreach($row in $table) {
+    Write-Host "ID: " $row.Item("ID") "USERNAME: " $row.Item("USERNAME") "ACCOUNT_CREATION: " $row.Item("ACCOUNT_CREATION") "LAST_LOGIN: " $row.Item("LAST_LOGIN")
+}
 
     # ROUTE EXAMPLE 2
     # http://127.0.0.1/some/form'
