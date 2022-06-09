@@ -17,14 +17,16 @@
     },
 
     "/": {
-       "css": "static/css/login.css",
-       "icon": "static/image/icon.ico",
-       "html": "static/login.html"
+        "icon": "static/image/icon.ico",
+        "css": "static/css/login.css",
+        "html": "static/login.html",
+        "js": "static/js/test.js"
     },
 
     "/database": {
-        "css": "static/css/style.css",
         "icon": "static/image/icon.ico",
-        "html": "static/database.html"
+        "css": "static/css/style.css",
+        "html": "static/database.html",
+        "js": ""
     }
  }

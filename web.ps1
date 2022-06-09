@@ -81,26 +81,47 @@ $http.Start()
 # ───── ❝ WEBSITE - HTML - CSS❞ ─────
 # Functions must be declared BEFORE using them
 # Stupidly complicated serving of websites XD
+function GetJS {
+    param ($RawUrl)
+    $location = $config.$RawUrl | Select-Object -ExpandProperty "js"
+    if ($location -ne "") {
+        $rawJS = Get-Content -Raw $location
+        $js = "<script>" + $rawJS + "</script>"
+        return $js
+    } else {
+        return ""
+    }
+}
+
 function GetCSS {
     param ($RawUrl)
     $location = $config.$RawUrl | Select-Object -ExpandProperty "css"
-    $rawCSS = Get-Content -Raw $location
-    $css = "<style>" + $rawCSS + "</style>"
-    return $css
+    if ($location -ne "") {
+        $rawCSS = Get-Content -Raw $location
+        $css = "<style>" + $rawCSS + "</style>"
+        return $css
+    } else {
+        return ""
+    }
 }
 
 function GetHTML {
     param ($RawUrl)
-    $location = $config.$RawUrl | Select-Object -ExpandProperty "html"
-    $rawHTML = Get-Content -Raw $location
-    return $rawHTML
+    if ($location -ne "") {
+        $location = $config.$RawUrl | Select-Object -ExpandProperty "html"
+        $rawHTML = Get-Content -Raw $location
+        return $rawHTML
+    } else {
+        return ""
+    }
 }
 
 function GetWebsite {
     param ($RawUrl)
     [string]$rawHTML = GetHTML -RawUrl $context.Request.RawUrl
     [string]$rawCSS = GetCSS -RawUrl $context.Request.RawUrl
-    [string]$html = $rawCSS + $rawHTML
+    [string]$rawJS = GetJS -RawUrl $context.Request.RawUrl
+    [string]$html = $rawCSS + $rawHTML + $rawJS
     return $html
 }
 
