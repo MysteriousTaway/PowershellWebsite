@@ -1,3 +1,26 @@
+    <tbody>
+    <tr>
+        <td>
+            <span class="custom-checkbox">
+                <input type="checkbox" id="checkbox1" name="options[]" value="1">
+                <label for="checkbox1"></label>
+            </span>
+        </td>
+        <td>1</td>
+        <td>1</td>
+        <td>true</td>
+        <td>12/6/2022</td>
+        <td>VS Code</td>
+        <td>
+            <a href="#editEntryModal" class="edit" data-toggle="modal"><i class="material-icons" data-toggle="tooltip" title="Edit">&#xE254;</i></a>
+            <a href="#deleteEntryModal" class="delete" data-toggle="modal"><i class="material-icons" data-toggle="tooltip" title="Delete">&#xE872;</i></a>
+        </td>
+    </tr>
+</tbody>
+
+
+
+
 #REGEX:
 #get username:
 #	(?<=username=)(.*)(?=&password)

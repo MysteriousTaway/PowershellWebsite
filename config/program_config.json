@@ -15,18 +15,25 @@
         "server": "127.0.0.1",
         "port": "3306"
     },
+    
+    "/error": {
+        "icon": "static/image/icon.ico",
+        "css": "",
+        "html": "static/html/error.html",
+        "js": ""
+    },
 
     "/": {
         "icon": "static/image/icon.ico",
         "css": "static/css/login.css",
-        "html": "static/login.html",
+        "html": "static/html/login.html",
         "js": "static/js/test.js"
     },
 
     "/database": {
         "icon": "static/image/icon.ico",
-        "css": "static/css/style.css",
-        "html": "static/database.html",
-        "js": ""
+        "css": "static/css/database.css",
+        "html": "static/html/database.html",
+        "js": "static/js/database.js"
     }
  }

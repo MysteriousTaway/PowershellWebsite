@@ -187,7 +187,7 @@ function AttemptLogin {
 
     # Check if password is correct:
     $passwordFromDatabase = GetDataFromSQLQuery -Query "SELECT PASSWORD FROM `users` WHERE USERNAME = '$username';"
-    #write-host "User: $username Password: $password PasswordFromDB: " $passwordFromDatabase.Item("PASSWORD") "FormContent: $FormContent"
+    write-host "User: $username Password: $password PasswordFromDB: " $passwordFromDatabase.Item("PASSWORD") "FormContent: $FormContent"
     if($password -eq $passwordFromDatabase.Item("PASSWORD")) {
         write-host "User $username logged in!" -f "black" -b "green"
         return $true
@@ -195,6 +195,70 @@ function AttemptLogin {
         write-host "Unsuccessful login attempt for user $username!" -f "black" -b "red"
         return $false
     }
+}
+
+# ───── ❝ DATABASE.html BACK-END MAGIC ❞ ─────
+function GetDatabaseHTML {
+    param ($RawUrl)
+    if ($location -ne "") {
+        # Get database HTML and split it into an array
+        $location = $config.$RawUrl | Select-Object -ExpandProperty "html"
+        $rawHTML = Get-Content -Raw $location
+        $HTML_Parts = "", ""
+        # Get part one:
+        $Regex = [Regex]::new("((?:.*?\n)*)<!--INSERT_DATABASE_HERE-->")
+        $Match = $Regex.Match($rawHTML)           
+        if($Match.Success) {           
+            $HTML_Parts[0] = $Match.Value   
+        }
+        # Get part two:
+        $Regex = [Regex]::new("<!--INSERT_DATABASE_HERE-->((?:.*?\n)*)")
+        $Match = $Regex.Match($rawHTML)           
+        if($Match.Success) {           
+            $HTML_Parts[1] = $Match.Value      
+        }
+        # Get data from database and insert it into the HTML
+        $data = GetDataFromSQLQuery -Query "SELECT * FROM `computers`;"
+        $data_html = ""
+        foreach($row in $data) {
+            $ID_CLASS = $row.Item("ID_CLASS")
+            $ID_PC = $row.Item("ID_PC")
+            $IS_FROZEN = $row.Item("IS_FROZEN")
+            $INSTALLATION_DATE = $row.Item("INSTALLATION_DATE")
+            $INSTALLED_SOFTWARE = $row.Item("INSTALLED_SOFTWARE")
+            
+            $data_html += "    <tbody>    <tr>        <td>            <span class=`"custom-checkbox`">                <input type=`"checkbox`" id=`"checkbox1`" name=`"options[]`" value=`"1`">                <label for=`"checkbox1`"></label>            </span>        </td>        <td>" + $ID_CLASS + "</td>        <td>" + $ID_PC + "</td>        <td>" + $IS_FROZEN + "</td>        <td>" + $INSTALLATION_DATE + "</td>        <td>" + $INSTALLED_SOFTWARE + "</td>        <td>            <a href=`"#editEntryModal`" class=`"edit`" data-toggle=`"modal`"><i class=`"material-icons`" data-toggle=`"tooltip`" title=`"Edit`">&#xE254;</i></a>            <a href=`"#deleteEntryModal`" class=`"delete`" data-toggle=`"modal`"><i class=`"material-icons`" data-toggle=`"tooltip`" title=`"Delete`">&#xE872;</i></a>        </td>    </tr></tbody>"
+        }
+        $fullDatabaseHTML = $HTML_Parts[0] + $data_html + $HTML_Parts[1]
+        return $fullDatabaseHTML
+    } else {
+        return ""
+    }
+}
+
+function GetDatabaseWebsite {
+    param ($RawUrl)
+    [string]$rawJS = GetJS -RawUrl $context.Request.RawUrl
+    [string]$rawCSS = GetCSS -RawUrl $context.Request.RawUrl
+    [string]$rawHTML = GetDatabaseHTML -RawUrl $context.Request.RawUrl
+    [string]$html = $rawCSS + $rawHTML + $rawJS
+    return $html
+}
+
+function SendDatabaseHTML {
+    param(
+        $RawUrl,
+        $context
+    )
+
+    # the html/data you want to send to the browser
+    # you could replace this with: [string]$html = Get-Content "C:\some\path\index.html" -Raw
+    [string]$html = GetDatabaseWebsite -RawUrl $context.Request.RawUrl
+    #respond to the request
+    $buffer = [System.Text.Encoding]::UTF8.GetBytes($html) # convert htmtl to bytes
+    $context.Response.ContentLength64 = $buffer.Length
+    $context.Response.OutputStream.Write($buffer, 0, $buffer.Length) #stream to broswer
+    $context.Response.OutputStream.Close()
 }
 
 # ───── ❝ HANDLE WEB REQUESTS ❞ ─────
@@ -226,9 +290,15 @@ while ($run -eq "true") {
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
         #Write-Host $FormContent -f 'yellow'
         if(AttemptLogin -FormContent $FormContent) {
-            SendHTML -RawUrl $context.Request.RawUrl -context $context
+            #SendHTML -RawUrl $context.Request.RawUrl -context $context
+            SendDatabaseHTML -RawUrl $context.Request.RawUrl -context $context
         }
     }
+    
+    #TODO: Make database.html work with POST ... it should be able to add new entries to the database and update existing entries (if the user has permission)
+    #TODO: Make database.html work with DELETE
+    #TODO: Add permissions to the database.html page
+    #TODO: Add permissions to users database
 
     # Kill server remotely :)
     if ($context.Request.HttpMethod -eq 'GET' -and $context.Request.RawUrl -eq '/taskkill') {
