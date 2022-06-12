@@ -1,3 +1,7 @@
+If you don't like challenges or suffering then don't make a website in Powershell. (But ngl it's much better than PHP or Golang)
+
+**SOURCES:**
+
 **Back-End**
  - starter code: https://gist.github.com/19WAS85/5424431
  
