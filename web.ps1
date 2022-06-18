@@ -2,7 +2,7 @@
 # Load config:
 $run = "true"
 # Write PID of current process for killtask
-write-host "PID: " + $PID
+write-host "PID: " $PID
 # Load config
 $configJson = Get-Content "config/program_config.json"
 # Convert to object
@@ -40,6 +40,7 @@ function InstallDependencies {
         LoadDependencies
     }
 }
+
 function  LoadDependencies{
     # Documentation: https://github.com/mithrandyr/SimplySql/blob/master/README.md
     # https://docs.microsoft.com/en-us/powershell/module/sqlps/invoke-sqlcmd?view=sqlserver-ps
@@ -143,16 +144,16 @@ function SendHTML() {
 
 # ───── ❝ MYSQL DATABASE ❞ ─────
 # Open MySQL connection and ask user for a certificate:
-# FIXME do not ask user for a certificate when it IS in the json file!
 Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
 function RunSQLQuery {
     param($Query)
     try {
         #Open-MySQLConnection -Server "$db_server"  -Port "$db_port" -Credential "$db_user" -Database "$db_database"
-        Invoke-SqlQuery -query "$Query"
+        Invoke-SqlUpdate -query "$Query"
         #Close-SqlConnection
     } catch {
         write-host "[RunSQLQuery] ERROR! Query: [$Query]" -f "black" -b "red"
+        Write-Warning $Error[0]
     }
 }
 
@@ -165,8 +166,10 @@ function GetDataFromSQLQuery {
         return $data
     } catch {
         write-host "[GetDataFromQuery] ERROR! Query: [$Query]" -f "black" -b "red"
+        Write-Warning $Error[0]
     }
 }
+
 # ───── ❝ DATABASE INTERACTIONS ❞ ─────
 function AttemptLogin {
     param($FormContent)
@@ -187,7 +190,7 @@ function AttemptLogin {
 
     # Check if password is correct:
     $passwordFromDatabase = GetDataFromSQLQuery -Query "SELECT PASSWORD FROM `users` WHERE USERNAME = '$username';"
-    write-host "User: $username Password: $password PasswordFromDB: " $passwordFromDatabase.Item("PASSWORD") "FormContent: $FormContent"
+    #write-host "User: $username Password: $password PasswordFromDB: " $passwordFromDatabase.Item("PASSWORD") "FormContent: $FormContent"
     if($password -eq $passwordFromDatabase.Item("PASSWORD")) {
         write-host "User $username logged in!" -f "black" -b "green"
         return $true
@@ -195,6 +198,94 @@ function AttemptLogin {
         write-host "Unsuccessful login attempt for user $username!" -f "black" -b "red"
         return $false
     }
+}
+
+function ParseDatabaseForm {
+    param ($FormContent)
+    # Parse:
+    # Should i write a separate parser for this ?
+
+    # Get ID_CLASS:
+    $Regex = [Regex]::new("(?<=ID_CLASS=)(.*)(?=&ID_PC)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $ID_CLASS = $Match.Value           
+    }
+
+    # Get ID_PC:
+    $Regex = [Regex]::new("(?<=ID_PC=)(.*)(?=&IS_FROZEN)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $ID_PC = $Match.Value           
+    }
+
+    # Get IS_FROZEN:
+    $Regex = [Regex]::new("(?<=IS_FROZEN=)(.*)(?=&INSTALLATION_DATE)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $IS_FROZEN = $Match.Value           
+    }
+
+    # Get INSTALLATION_DATE:
+    $Regex = [Regex]::new("(?<=INSTALLATION_DATE=)(.*)(?=&INSTALLED_SOFTWARE)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $INSTALLATION_DATE = $Match.Value           
+    }
+
+    # Get INSTALLED_SOFTWARE:
+    $Regex = [Regex]::new("(?<=INSTALLED_SOFTWARE=)(.*)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $INSTALLED_SOFTWARE = $Match.Value           
+    }
+
+    if ($INSTALLED_SOFTWARE -eq "") {
+        $INSTALLED_SOFTWARE = "{}"
+    }
+
+    if ($INSTALLATION_DATE -eq "") {
+        $INSTALLATION_DATE = "1987-07-27"
+        <#
+            Never gonna give you up
+            Never gonna let you down
+            Never gonna run around and desert you
+            Never gonna make you cry
+            Never gonna say goodbye
+            Never gonna tell a lie and hurt you
+        #>
+    }
+
+    #write-host "ID_CLASS: $ID_CLASS ID_PC: $ID_PC IS_FROZEN: $IS_FROZEN INSTALLATION_DATE: $INSTALLATION_DATE INSTALLED_SOFTWARE: $INSTALLED_SOFTWARE"
+    # Returns a dictionary:
+    return @{
+        "ID_CLASS" = $ID_CLASS;
+        "ID_PC" = $ID_PC;
+        "IS_FROZEN" = $IS_FROZEN;
+        "INSTALLATION_DATE" = $INSTALLATION_DATE;
+        "INSTALLED_SOFTWARE" = $INSTALLED_SOFTWARE;
+    }
+}
+
+function DatabaseAdd {
+    param ($FormContent)
+    $Parsed_Data =  ParseDatabaseForm -FormContent $FormContent
+    #write-host " Parsed_Data.ID_CLASS " $Parsed_Data.ID_CLASS " Parsed_Data.ID_PC " $Parsed_Data.ID_PC " Parsed_Data.IS_FROZEN " $Parsed_Data.IS_FROZEN " Parsed_Data.INSTALLATION_DATE " $Parsed_Data.INSTALLATION_DATE " Parsed_Data.INSTALLED_SOFTWARE " $Parsed_Data.INSTALLED_SOFTWARE
+    $Query = "INSERT INTO `computers` (`ID_CLASS`, `ID_PC`, `IS_FROZEN`, `INSTALLATION_DATE`, `INSTALLED_SOFTWARE`) VALUES ('" + $Parsed_Data.ID_CLASS + "', '" + $Parsed_Data.ID_PC + "', '" + $Parsed_Data.IS_FROZEN + "', '" + $Parsed_Data.INSTALLATION_DATE + "', '" + $Parsed_Data.INSTALLED_SOFTWARE + "');"
+    RunSQLQuery -Query "$Query"
+}
+
+function DatabaseRemove {
+    param ($FormContent)
+    $Parsed_Data =  ParseDatabaseForm -FormContent $FormContent
+    RunSQLQuery -Query "DELETE FROM `computers` WHERE `ID_PC` = '$ID_PC';"
+}
+
+function DatabaseUpdate {
+    param ($FormContent)
+    $Parsed_Data =  ParseDatabaseForm -FormContent $FormContent
+    $Query = "UPDATE `computers` SET `ID_CLASS` = '" + $Parsed_Data.ID_CLASS + "', `ID_PC` = '" + $Parsed_Data.ID_PC + "', `IS_FROZEN` = '" + $Parsed_Data.IS_FROZEN + "', `INSTALLATION_DATE` = '" + $Parsed_Data.INSTALLATION_DATE + "', `INSTALLED_SOFTWARE` = '" + $Parsed_Data.INSTALLED_SOFTWARE + "' WHERE `ID_PC` = '" + $Parsed_Data.ID_PC + "';"
+    RunSQLQuery -Query $Query
 }
 
 # ───── ❝ DATABASE.html BACK-END MAGIC ❞ ─────
@@ -207,8 +298,8 @@ function GetDatabaseHTML {
         $HTML_Parts = "", ""
         # Get part one:
         $Regex = [Regex]::new("((?:.*?\n)*)<!--INSERT_DATABASE_HERE-->")
-        $Match = $Regex.Match($rawHTML)           
-        if($Match.Success) {           
+        $Match = $Regex.Match($rawHTML)
+        if($Match.Success) {
             $HTML_Parts[0] = $Match.Value   
         }
         # Get part two:
@@ -236,24 +327,17 @@ function GetDatabaseHTML {
     }
 }
 
-function GetDatabaseWebsite {
-    param ($RawUrl)
-    [string]$rawJS = GetJS -RawUrl $context.Request.RawUrl
-    [string]$rawCSS = GetCSS -RawUrl $context.Request.RawUrl
-    [string]$rawHTML = GetDatabaseHTML -RawUrl $context.Request.RawUrl
-    [string]$html = $rawCSS + $rawHTML + $rawJS
-    return $html
-}
-
 function SendDatabaseHTML {
     param(
-        $RawUrl,
         $context
     )
 
     # the html/data you want to send to the browser
     # you could replace this with: [string]$html = Get-Content "C:\some\path\index.html" -Raw
-    [string]$html = GetDatabaseWebsite -RawUrl $context.Request.RawUrl
+    [string]$rawJS = GetJS -RawUrl '/database'
+    [string]$rawCSS = GetCSS -RawUrl '/database'
+    [string]$rawHTML = GetDatabaseHTML -RawUrl '/database'
+    [string]$html = $rawCSS + $rawHTML + $rawJS
     #respond to the request
     $buffer = [System.Text.Encoding]::UTF8.GetBytes($html) # convert htmtl to bytes
     $context.Response.ContentLength64 = $buffer.Length
@@ -290,20 +374,49 @@ while ($run -eq "true") {
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
         #Write-Host $FormContent -f 'yellow'
         if(AttemptLogin -FormContent $FormContent) {
-            #SendHTML -RawUrl $context.Request.RawUrl -context $context
-            SendDatabaseHTML -RawUrl $context.Request.RawUrl -context $context
+            SendDatabaseHTML -context $context
         }
     }
-    
-    #TODO: Make database.html work with POST ... it should be able to add new entries to the database and update existing entries (if the user has permission)
-    #TODO: Make database.html work with DELETE
-    #TODO: Add permissions to the database.html page
-    #TODO: Add permissions to users database
+
+    if ($context.Request.HttpMethod -eq 'POST' -and $context.Request.RawUrl -eq '/database/Add') {
+        # decode the form post
+        # html form members need 'name' attributes as in the example!
+        $FormContent = [System.IO.StreamReader]::new($context.Request.InputStream).ReadToEnd()
+
+        # We can log the request to the terminal
+        write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
+        Write-Host "FormContent: " $FormContent -f 'yellow'
+        DatabaseAdd -FormContent $FormContent
+        SendDatabaseHTML -context $context
+    }
+
+    if ($context.Request.HttpMethod -eq 'POST' -and $context.Request.RawUrl -eq '/database/Edit') {
+        # decode the form post
+        # html form members need 'name' attributes as in the example!
+        $FormContent = [System.IO.StreamReader]::new($context.Request.InputStream).ReadToEnd()
+
+        # We can log the request to the terminal
+        write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
+        Write-Host "FormContent: " $FormContent -f 'yellow'
+        DatabaseUpdate -FormContent $FormContent
+        SendDatabaseHTML -context $context
+    }
+
+    if ($context.Request.HttpMethod -eq 'POST' -and $context.Request.RawUrl -eq '/database/Remove') {
+        # decode the form post
+        # html form members need 'name' attributes as in the example!
+        $FormContent = [System.IO.StreamReader]::new($context.Request.InputStream).ReadToEnd()
+
+        # We can log the request to the terminal
+        write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
+        Write-Host "FormContent: " $FormContent -f 'yellow'
+        DatabaseRemove -FormContent $FormContent
+        SendDatabaseHTML -context $context
+    }
 
     # Kill server remotely :)
     if ($context.Request.HttpMethod -eq 'GET' -and $context.Request.RawUrl -eq '/taskkill') {
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
-        Write-Host $FormContent -f 'Green'
         $run = "false"
         $context.Response.OutputStream.Close()
     }

@@ -1,0 +1,11 @@
+TASKS:
+    ✔ @critical Make database.html work with SUBMIT ... it should be able to add new entries to the database and update existing entries (if the user has permission) @done (6/18/2022, 10:21:08 PM)
+    ☐ @critical Add Try-Catch blocks EVERYWHERE!
+    ☐ @low  Add permissions to the database.html page
+    ☐ @low Add permissions to users database
+
+FIX:
+    ☐ @high function DatabaseRemove
+    ☐ @low RunSQLQuery prints 0 to the console
+    ☐ @low THIS: WARNING: Query returned no resultset.  This occurs when the query has no select statement or invokes a stored procedure that does not return a resultset.  Use 'Invoke-SqlUpdate' to avoid this warning. 
+    ✘ do not ask user for a certificate when it IS in the json file! @cancelled (6/15/2022, 7:24:03 PM)
