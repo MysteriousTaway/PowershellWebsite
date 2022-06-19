@@ -204,6 +204,13 @@ function ParseDatabaseForm {
     param ($FormContent)
     # Parse:
     # Should i write a separate parser for this ?
+    
+    # Get original_ID_PC:
+    $Regex = [Regex]::new("(?<=original_IDPC=)(.*)(?=&ID_CLASS)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $original_IDPC = $Match.Value
+    }
 
     # Get ID_CLASS:
     $Regex = [Regex]::new("(?<=ID_CLASS=)(.*)(?=&ID_PC)")
@@ -259,6 +266,7 @@ function ParseDatabaseForm {
     #write-host "ID_CLASS: $ID_CLASS ID_PC: $ID_PC IS_FROZEN: $IS_FROZEN INSTALLATION_DATE: $INSTALLATION_DATE INSTALLED_SOFTWARE: $INSTALLED_SOFTWARE"
     # Returns a dictionary:
     return @{
+        "original_IDPC" = $original_IDPC
         "ID_CLASS" = $ID_CLASS;
         "ID_PC" = $ID_PC;
         "IS_FROZEN" = $IS_FROZEN;
@@ -273,19 +281,28 @@ function DatabaseAdd {
     #write-host " Parsed_Data.ID_CLASS " $Parsed_Data.ID_CLASS " Parsed_Data.ID_PC " $Parsed_Data.ID_PC " Parsed_Data.IS_FROZEN " $Parsed_Data.IS_FROZEN " Parsed_Data.INSTALLATION_DATE " $Parsed_Data.INSTALLATION_DATE " Parsed_Data.INSTALLED_SOFTWARE " $Parsed_Data.INSTALLED_SOFTWARE
     $Query = "INSERT INTO `computers` (`ID_CLASS`, `ID_PC`, `IS_FROZEN`, `INSTALLATION_DATE`, `INSTALLED_SOFTWARE`) VALUES ('" + $Parsed_Data.ID_CLASS + "', '" + $Parsed_Data.ID_PC + "', '" + $Parsed_Data.IS_FROZEN + "', '" + $Parsed_Data.INSTALLATION_DATE + "', '" + $Parsed_Data.INSTALLED_SOFTWARE + "');"
     RunSQLQuery -Query "$Query"
+    Write-Host "Added entry with ID_PC: "$Parsed_Data.ID_PC"!" -f "black" -b "yellow"
 }
 
 function DatabaseRemove {
     param ($FormContent)
-    $Parsed_Data =  ParseDatabaseForm -FormContent $FormContent
-    RunSQLQuery -Query "DELETE FROM `computers` WHERE `ID_PC` = '$ID_PC';"
+    # Get ID_PC:
+    $Regex = [Regex]::new("(?<=ID_PC=)(.*)")
+    $Match = $Regex.Match($FormContent)           
+    if($Match.Success) {           
+        $ID_PC = $Match.Value           
+    }
+    $Query = "DELETE FROM `computers` WHERE `ID_PC` = '" + $ID_PC + "';"
+    RunSQLQuery -Query $Query
+    Write-Host "Deleted entry with ID_PC: $ID_PC!" -f "black" -b "yellow"
 }
 
 function DatabaseUpdate {
     param ($FormContent)
     $Parsed_Data =  ParseDatabaseForm -FormContent $FormContent
-    $Query = "UPDATE `computers` SET `ID_CLASS` = '" + $Parsed_Data.ID_CLASS + "', `ID_PC` = '" + $Parsed_Data.ID_PC + "', `IS_FROZEN` = '" + $Parsed_Data.IS_FROZEN + "', `INSTALLATION_DATE` = '" + $Parsed_Data.INSTALLATION_DATE + "', `INSTALLED_SOFTWARE` = '" + $Parsed_Data.INSTALLED_SOFTWARE + "' WHERE `ID_PC` = '" + $Parsed_Data.ID_PC + "';"
+    $Query = "UPDATE `computers` SET `ID_CLASS` = '" + $Parsed_Data.ID_CLASS + "', `ID_PC` = '" + $Parsed_Data.ID_PC + "', `IS_FROZEN` = '" + $Parsed_Data.IS_FROZEN + "', `INSTALLATION_DATE` = '" + $Parsed_Data.INSTALLATION_DATE + "', `INSTALLED_SOFTWARE` = '" + $Parsed_Data.INSTALLED_SOFTWARE + "' WHERE `ID_PC` = '" + $Parsed_Data.original_IDPC + "';"
     RunSQLQuery -Query $Query
+    Write-Host "Updated entry ID_PC: possible change to ID_PC: ["$Parsed_Data.original_IDPC" -> "$Parsed_Data.ID_PC"]!" -f "black" -b "yellow"
 }
 
 # ───── ❝ DATABASE.html BACK-END MAGIC ❞ ─────
@@ -318,7 +335,7 @@ function GetDatabaseHTML {
             $INSTALLATION_DATE = $row.Item("INSTALLATION_DATE")
             $INSTALLED_SOFTWARE = $row.Item("INSTALLED_SOFTWARE")
             
-            $data_html += "    <tbody>    <tr>        <td>            <span class=`"custom-checkbox`">                <input type=`"checkbox`" id=`"checkbox1`" name=`"options[]`" value=`"1`">                <label for=`"checkbox1`"></label>            </span>        </td>        <td>" + $ID_CLASS + "</td>        <td>" + $ID_PC + "</td>        <td>" + $IS_FROZEN + "</td>        <td>" + $INSTALLATION_DATE + "</td>        <td>" + $INSTALLED_SOFTWARE + "</td>        <td>            <a href=`"#editEntryModal`" class=`"edit`" data-toggle=`"modal`"><i class=`"material-icons`" data-toggle=`"tooltip`" title=`"Edit`">&#xE254;</i></a>            <a href=`"#deleteEntryModal`" class=`"delete`" data-toggle=`"modal`"><i class=`"material-icons`" data-toggle=`"tooltip`" title=`"Delete`">&#xE872;</i></a>        </td>    </tr></tbody>"
+            $data_html += "<tbody>   <tr>      <td>" + $ID_CLASS + "</td>      <td>" + $ID_PC + "</td>      <td>" + $IS_FROZEN + "</td>      <td>" + $INSTALLATION_DATE + "</td>      <td>" + $INSTALLED_SOFTWARE + "</td>   </tr></tbody>"
         }
         $fullDatabaseHTML = $HTML_Parts[0] + $data_html + $HTML_Parts[1]
         return $fullDatabaseHTML
@@ -372,7 +389,7 @@ while ($run -eq "true") {
 
         # We can log the request to the terminal
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
-        #Write-Host $FormContent -f 'yellow'
+        #Write-Host "FormContent: " $FormContent -f 'yellow'
         if(AttemptLogin -FormContent $FormContent) {
             SendDatabaseHTML -context $context
         }
@@ -385,7 +402,7 @@ while ($run -eq "true") {
 
         # We can log the request to the terminal
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
-        Write-Host "FormContent: " $FormContent -f 'yellow'
+        #Write-Host "FormContent: " $FormContent -f 'yellow'
         DatabaseAdd -FormContent $FormContent
         SendDatabaseHTML -context $context
     }
@@ -409,7 +426,7 @@ while ($run -eq "true") {
 
         # We can log the request to the terminal
         write-host "$($context.Request.UserHostAddress)  =>  $($context.Request.Url)" -f 'mag'
-        Write-Host "FormContent: " $FormContent -f 'yellow'
+        #Write-Host "FormContent: " $FormContent -f 'yellow'
         DatabaseRemove -FormContent $FormContent
         SendDatabaseHTML -context $context
     }

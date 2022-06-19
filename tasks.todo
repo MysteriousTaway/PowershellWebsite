@@ -1,11 +1,20 @@
 TASKS:
     ✔ @critical Make database.html work with SUBMIT ... it should be able to add new entries to the database and update existing entries (if the user has permission) @done (6/18/2022, 10:21:08 PM)
     ☐ @critical Add Try-Catch blocks EVERYWHERE!
-    ☐ @low  Add permissions to the database.html page
-    ☐ @low Add permissions to users database
+    ✘ @low  Add permissions to the database.html page @cancelled (6/19/2022, 12:48:32 AM)
+    ✘ @low Add permissions to users database @cancelled (6/19/2022, 12:48:37 AM)
+    ✔ @today Remove the edit button from the database.html page @done (6/19/2022, 1:05:17 AM)
+    ✔ @today Remove the Remove button from the database.html page @done (6/19/2022, 1:05:21 AM)
+    ✔ @today Move the edit button to the top of the database.html page @done (6/19/2022, 1:05:24 AM)
+    ✔ Fix Edit in database.html @done (6/19/2022, 9:44:56 PM)
+    ✔ Edit in database ... require another ID_PC @done (6/19/2022, 9:44:59 PM)
+    ☐ Add code 404 support to the website
+    ☐ Change required form options in database.html
 
 FIX:
-    ☐ @high function DatabaseRemove
-    ☐ @low RunSQLQuery prints 0 to the console
-    ☐ @low THIS: WARNING: Query returned no resultset.  This occurs when the query has no select statement or invokes a stored procedure that does not return a resultset.  Use 'Invoke-SqlUpdate' to avoid this warning. 
+    ✔ @high function DatabaseRemove @done (6/19/2022, 12:48:46 AM)
+    ☐ @low RunSQLQuery prints 0 or 1 to the console
+    ✔ @critical Fix INSTALLED_SOFTWARE because it always kills the DB when you try to insert some data @done (6/19/2022, 9:45:12 PM)
+    ☐ @high Fix text returned from website .... it returns some stupid ass hex shit :< 
+    ✔ @low THIS: WARNING: Query returned no resultset.  This occurs when the query has no select statement or invokes a stored procedure that does not return a resultset.  Use 'Invoke-SqlUpdate' to avoid this warning. @done (6/19/2022, 12:48:54 AM)
     ✘ do not ask user for a certificate when it IS in the json file! @cancelled (6/15/2022, 7:24:03 PM)
